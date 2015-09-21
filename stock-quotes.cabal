@@ -4,21 +4,53 @@
 name:                stock-quotes
 version:             0.1.0.0
 synopsis:            Download historical stock quotes from the Yahoo server
--- description:         
+description:         Historical stock quote retrieval       
 license:             BSD3
 license-file:        LICENSE
 author:              Todd Roth
 maintainer:          toddjroth@gmail.com
--- copyright:           
+copyright:           2015, Todd Roth        
 category:            Finance
 build-type:          Simple
 -- extra-source-files:  
 cabal-version:       >=1.10
 
 library
-  -- exposed-modules:     
+  exposed-modules:   Data.Yahoo     
   -- other-modules:       
   -- other-extensions:    
   build-depends:       base >=4.8 && <4.9
+                     , cassava
+                     , vector
+                     , text
+                     , bytestring
+                     , time
+                     , wreq
+                     , http-client
+                     , lens
+                     , errors
+                     , lens-aeson
+                     , mtl
+                     , transformers
   hs-source-dirs:      src
+  default-language:    Haskell2010
+
+executable stock-quotes-exec
+  ghc-options:         -Wall
+  hs-source-dirs:      src
+  main-is:             Main.hs
+  build-depends:       base >= 4.7 && <5
+                     , stock-quotes
+                     , cassava
+                     , vector
+                     , text
+                     , bytestring
+                     , time
+                     , wreq
+                     , http-client
+                     , lens
+                     , errors
+                     , lens-aeson
+                     , transformers
+                 
   default-language:    Haskell2010
