@@ -175,10 +175,28 @@ getQuotes' sym intvl endday numdays = do
    Right v -> return v
    Left s -> throwError (ParseError s)
 
+
 toQuotes' :: BL.ByteString -> ErrorM (V.Vector YahooQuote)
 toQuotes' bs = do
   let qs = decode HasHeader bs
   case qs of
    Right v -> return v
    Left s -> throwError (ParseError s)
+
+  
+-- | Request historical quote data from the Yahoo server and return a Right (Vector YahooQuote) if the parse
+-- is successful, otherwsie returns Left String.  Will throw an "HttpException" if the server request fails.
+getQuotes'' :: Symbol
+          -- ^ The stock ticker symbol
+       -> Interval
+          -- ^ The quote interval i.e. Daily, Weekly or Monthly
+       -> Day
+          -- ^ The last day in the range of data to be requested
+       -> Integer
+          -- ^ How many days of data to request
+       -> ErrorM (V.Vector YahooQuote)
+getQuotes'' sym intvl endday numdays = do
+  bs <- getCSV' sym intvl endday numdays
+  toQuotes' bs
+
   

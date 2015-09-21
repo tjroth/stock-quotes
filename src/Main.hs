@@ -18,22 +18,12 @@ main = do
        getCSV' "FB" Daily cd 10
 
   s <- runExceptT $ do
-       getQuotes' "FBsdfa" Daily cd 10
+       getQuotes'' "FBsdfa" Daily cd 10
   s' <- runExceptT $ do
-       getQuotes' "FB" Daily cd 10
+       getQuotes'' "FB" Daily cd 10
 
 
-  print q
- -- print q' 
-
- -- print s
- -- print s'
-  --hoistEither r
-  {--case q of
-   Right q -> mapM_  print q
-   Left e -> putStrLn (show e)
---}
-  --print q
-  --print q'
+  print s
+  print s'
 
 
