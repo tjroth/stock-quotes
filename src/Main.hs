@@ -11,16 +11,16 @@ main = do
   ct <- getCurrentTime
   let cd = utctDay ct
   q <- runExceptT $ do
-       bs <- getCSV' "FB" Daily cd 10
-       toQuotes' bs
+       bs <- getCSV "FB" Daily cd 10
+       toQuotes bs
        
   q' <- runExceptT $ do
-       getCSV' "FB" Daily cd 10
+       getCSV "FB" Daily cd 10
 
   s <- runExceptT $ do
-       getQuotes'' "FBsdfa" Daily cd 10
+       getQuotes "FBsdfa" Daily cd 10
   s' <- runExceptT $ do
-       getQuotes'' "FB" Daily cd 10
+       getQuotes "FB" Daily cd 10
 
 
   print s

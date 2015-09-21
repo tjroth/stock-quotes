@@ -57,6 +57,70 @@ data YahooApiError = NetworkError HC.HttpException
 
 type ErrorM = ExceptT YahooApiError IO
                
+
+  
+-- | Request historical quote data from Yahoo server and return as a bytestring (csv formatted).
+-- 
+getCSV :: Symbol
+          -- ^ The stock ticker symbol
+       -> Interval
+          -- ^ The quote interval i.e. Daily, Weekly or Monthly
+       -> Day
+          -- ^ The last day in the range of data to be requested
+       -> Integer
+          -- ^ How many days of data to request
+       -> ErrorM BL.ByteString --ExceptT YahooApiError IO BL.ByteString
+getCSV sym intvl endday numdays = do
+  (r :: Either HC.HttpException (Response BL.ByteString)) <- liftIO (E.try (getWith opts baseUrl)) 
+  case r of
+   Right r' -> return (r' ^. responseBody)
+   Left e -> throwError (NetworkError e)
+  where
+      baseUrl = "http://real-chart.finance.yahoo.com/table.csv"     
+      stday = addDays (-(numdays-1)) endday
+      (f,d,e) = toGregorian endday
+      (c,a,b) = toGregorian stday
+      opts = defaults &
+           param "a" .~ [T.pack . show $ a-1] &
+           param "b" .~ [T.pack $ show b] &
+           param "c" .~ [T.pack $ show c] &
+           param "d" .~ [T.pack . show $ d-1] &
+           param "e" .~ [T.pack $ show e] &
+           param "f" .~ [T.pack $ show f] &
+           param "ignore" .~ [".csv"] &
+           param "s" .~ [T.pack sym] &
+           param "g" .~ [T.pack $ show intvl]
+
+
+-- | Convert a csv ByteString to V.Vector YahooQuote.
+toQuotes :: BL.ByteString -> ErrorM (V.Vector YahooQuote)
+toQuotes bs = do
+  let qs = decode HasHeader bs
+  case qs of
+   Right v -> return v
+   Left s -> throwError (ParseError s)
+
+  
+-- | Request historical quote data from the Yahoo server and return a Right (Vector YahooQuote) if the parse
+-- is successful, otherwsie returns Left String.  Will throw an "HttpException" if the server request fails.
+getQuotes :: Symbol
+          -- ^ The stock ticker symbol
+       -> Interval
+          -- ^ The quote interval i.e. Daily, Weekly or Monthly
+       -> Day
+          -- ^ The last day in the range of data to be requested
+       -> Integer
+          -- ^ How many days of data to request
+       -> ErrorM (V.Vector YahooQuote)
+getQuotes sym intvl endday numdays = do
+  bs <- getCSV sym intvl endday numdays
+  toQuotes bs
+
+  
+
+
+{--
+
 -- | Request historical quote data from Yahoo server and return as a bytestring (csv formatted).
 -- Throws an HttpException if the request fails.
 getCSV :: Symbol
@@ -104,7 +168,7 @@ getQuotes sym intvl endday numdays = do
   return $ decode HasHeader bs
 
 
-{--
+
 getQuotes :: Symbol
           -- ^ The stock ticker symbol
        -> Interval
@@ -122,40 +186,6 @@ getQuotes sym intvl endday numdays = do
      Right r -> return r
      Left e -> return $ Left ("Network Error: " ++ show e)
   return r
---}
-  
--- | Request historical quote data from Yahoo server and return as a bytestring (csv formatted).
--- Throws an HttpException if the request fails.
-getCSV' :: Symbol
-          -- ^ The stock ticker symbol
-       -> Interval
-          -- ^ The quote interval i.e. Daily, Weekly or Monthly
-       -> Day
-          -- ^ The last day in the range of data to be requested
-       -> Integer
-          -- ^ How many days of data to request
-       -> ErrorM BL.ByteString --ExceptT YahooApiError IO BL.ByteString
-getCSV' sym intvl endday numdays = do
-  (r :: Either HC.HttpException (Response BL.ByteString)) <- liftIO (E.try (getWith opts baseUrl)) 
-  case r of
-   Right r' -> return (r' ^. responseBody)
-   Left e -> throwError (NetworkError e)
-  where
-      baseUrl = "http://real-chart.finance.yahoo.com/table.csv"     
-      stday = addDays (-(numdays-1)) endday
-      (f,d,e) = toGregorian endday
-      (c,a,b) = toGregorian stday
-      opts = defaults &
-           param "a" .~ [T.pack . show $ a-1] &
-           param "b" .~ [T.pack $ show b] &
-           param "c" .~ [T.pack $ show c] &
-           param "d" .~ [T.pack . show $ d-1] &
-           param "e" .~ [T.pack $ show e] &
-           param "f" .~ [T.pack $ show f] &
-           param "ignore" .~ [".csv"] &
-           param "s" .~ [T.pack sym] &
-           param "g" .~ [T.pack $ show intvl]
-
 
 -- | Request historical quote data from the Yahoo server and return a Right (Vector YahooQuote) if the parse
 -- is successful, otherwsie returns Left String.  Will throw an "HttpException" if the server request fails.
@@ -174,29 +204,4 @@ getQuotes' sym intvl endday numdays = do
   case qs of
    Right v -> return v
    Left s -> throwError (ParseError s)
-
-
-toQuotes' :: BL.ByteString -> ErrorM (V.Vector YahooQuote)
-toQuotes' bs = do
-  let qs = decode HasHeader bs
-  case qs of
-   Right v -> return v
-   Left s -> throwError (ParseError s)
-
-  
--- | Request historical quote data from the Yahoo server and return a Right (Vector YahooQuote) if the parse
--- is successful, otherwsie returns Left String.  Will throw an "HttpException" if the server request fails.
-getQuotes'' :: Symbol
-          -- ^ The stock ticker symbol
-       -> Interval
-          -- ^ The quote interval i.e. Daily, Weekly or Monthly
-       -> Day
-          -- ^ The last day in the range of data to be requested
-       -> Integer
-          -- ^ How many days of data to request
-       -> ErrorM (V.Vector YahooQuote)
-getQuotes'' sym intvl endday numdays = do
-  bs <- getCSV' sym intvl endday numdays
-  toQuotes' bs
-
-  
+--}
